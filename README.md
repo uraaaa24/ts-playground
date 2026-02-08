@@ -1,6 +1,8 @@
-# PG.js Constellation Gallery (TypeScript)
+# PG.js Gallery (TypeScript)
 
-ブラウザで鑑賞できる、TypeScript製のミニ作品集です。ページ遷移（ハッシュ）で作品を切り替えます。DBは不要です。
+作品選択用のホーム画面と、各作品を全画面で鑑賞できるページを持つギャラリーです。
+- ホーム: `/`
+- 作品ページ: `/<title>`（例: `/particle`, `/quad-fill`）
 
 ## Setup
 

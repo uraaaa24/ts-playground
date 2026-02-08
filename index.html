@@ -3,35 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PG.js Constellation Gallery</title>
+    <title>PG.js Gallery</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app">
-      <header class="site-header">
-        <div>
-          <p class="eyebrow">PG.js Constellation Gallery</p>
-          <h1>pg.js TypeScript 作品集</h1>
-          <p class="subtitle">ページ遷移で作品を切り替えながら、ブラウザで鑑賞できます。</p>
-        </div>
-      </header>
-      <main class="layout">
-        <nav class="nav" aria-label="作品一覧">
-          <h2>作品一覧</h2>
-          <ul id="artwork-links" class="nav-list"></ul>
-        </nav>
-        <section class="viewer">
-          <div class="viewer-header">
-            <div>
-              <p id="artwork-category" class="eyebrow"></p>
-              <h2 id="artwork-title">Loading...</h2>
-              <p id="artwork-description" class="description"></p>
-            </div>
-          </div>
-          <div class="viewer-canvas" id="artwork-canvas" role="img" aria-live="polite"></div>
-        </section>
-      </main>
-    </div>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

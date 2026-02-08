@@ -1,58 +1,82 @@
 import "./style.css";
-import { artworks } from "./artworks";
+import { artworks, getArtworkBySlug } from "./artworks";
 
-const artworkLinks = document.querySelector<HTMLUListElement>("#artwork-links");
-const artworkTitle = document.querySelector<HTMLHeadingElement>("#artwork-title");
-const artworkCategory = document.querySelector<HTMLParagraphElement>("#artwork-category");
-const artworkDescription = document.querySelector<HTMLParagraphElement>("#artwork-description");
-const artworkCanvas = document.querySelector<HTMLDivElement>("#artwork-canvas");
+const app = document.querySelector<HTMLDivElement>("#app");
 
-if (!artworkLinks || !artworkTitle || !artworkCategory || !artworkDescription || !artworkCanvas) {
-  throw new Error("Missing artwork UI elements.");
+if (!app) {
+  throw new Error("Missing #app element.");
 }
 
-const renderNavigation = () => {
-  artworkLinks.innerHTML = artworks
-    .map((artwork) => {
-      return `
-        <li>
-          <a href="#${artwork.id}" data-artwork="${artwork.id}">${artwork.title}</a>
-        </li>
-      `;
-    })
-    .join("");
+let cleanup: (() => void) | null = null;
+
+const clearCleanup = () => {
+  if (cleanup) {
+    cleanup();
+    cleanup = null;
+  }
 };
 
-const updateActiveLink = (currentId: string) => {
-  const links = artworkLinks.querySelectorAll<HTMLAnchorElement>("a[data-artwork]");
-  links.forEach((link) => {
-    const isActive = link.dataset.artwork === currentId;
-    if (isActive) {
-      link.setAttribute("aria-current", "page");
-    } else {
-      link.removeAttribute("aria-current");
-    }
-  });
+const renderHome = () => {
+  app.className = "home";
+  app.innerHTML = `
+    <h1>PG.js Gallery</h1>
+    <p>作品を選んでページ遷移してください。</p>
+    <ul>
+      ${artworks
+        .map(
+          (artwork) =>
+            `<li><a href="/${artwork.slug}">${artwork.title}</a></li>`
+        )
+        .join("")}
+    </ul>
+  `;
 };
 
-const renderArtwork = (id?: string) => {
-  const selected = artworks.find((artwork) => artwork.id === id) ?? artworks[0];
-  artworkTitle.textContent = selected.title;
-  artworkCategory.textContent = selected.category;
-  artworkDescription.textContent = selected.description;
-  artworkCanvas.textContent = selected.render();
-  updateActiveLink(selected.id);
+const renderArtwork = (slug: string) => {
+  app.className = "";
+  app.innerHTML = "";
+  const artwork = getArtworkBySlug(slug);
+  if (!artwork) {
+    renderNotFound();
+    return;
+  }
+  cleanup = artwork.mount(app);
 };
 
-const getArtworkFromHash = () => {
-  const hash = window.location.hash.replace("#", "");
-  return hash || artworks[0].id;
+const renderNotFound = () => {
+  app.className = "home";
+  app.innerHTML = `
+    <h1>Not Found</h1>
+    <p>作品が見つかりませんでした。</p>
+    <a href="/">ホームに戻る</a>
+  `;
 };
 
-const handleHashChange = () => {
-  renderArtwork(getArtworkFromHash());
+const navigate = (path: string) => {
+  clearCleanup();
+  if (path === "/") {
+    renderHome();
+  } else {
+    renderArtwork(path.replace("/", ""));
+  }
 };
 
-renderNavigation();
-renderArtwork(getArtworkFromHash());
-window.addEventListener("hashchange", handleHashChange);
+const handleLinkClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  const link = target.closest("a");
+  if (!link) {
+    return;
+  }
+  const href = link.getAttribute("href");
+  if (!href || !href.startsWith("/")) {
+    return;
+  }
+  event.preventDefault();
+  window.history.pushState({}, "", href);
+  navigate(href);
+};
+
+window.addEventListener("popstate", () => navigate(window.location.pathname));
+document.addEventListener("click", handleLinkClick);
+
+navigate(window.location.pathname);

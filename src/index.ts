@@ -1,1 +1,1 @@
-console.log("Run \"pnpm dev\" to view the PG.js constellation gallery in the browser.");
+console.log("Run \"pnpm dev\" and open the browser gallery at /.");
