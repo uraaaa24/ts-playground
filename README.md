@@ -1,17 +1,10 @@
-# PG.js Constellation (TypeScript)
+# PG.js Constellation Gallery (TypeScript)
 
-A tiny TypeScript "artwork" that paints a `PG.js` constellation in the terminal. No database is required.
+ブラウザで鑑賞できる、TypeScript製のミニ作品集です。ページ遷移（ハッシュ）で作品を切り替えます。DBは不要です。
 
 ## Setup
 
 ```bash
-pnpm install
-```
-
-If you previously installed the database-backed version, remove old dependencies first:
-
-```bash
-rm -rf node_modules pnpm-lock.yaml
 pnpm install
 ```
 
@@ -20,3 +13,5 @@ pnpm install
 ```bash
 pnpm dev
 ```
+
+Viteの開発サーバーが起動したら、表示されたURLにアクセスしてください。
