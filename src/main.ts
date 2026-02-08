@@ -42,6 +42,7 @@ const renderArtwork = (slug: string) => {
     renderNotFound();
     return;
   }
+  // 作品側の mount は「描画開始 + クリーンアップ関数」を返す想定
   cleanup = artwork.mount(app);
 };
 

@@ -13,6 +13,7 @@ export const auroraPulseArtwork = (): Artwork => {
       let instance: P5Instance | null = null;
 
       const start = async () => {
+        // p5 は CDN からロードするため、最初の呼び出し時に非同期で読み込みます。
         const P5 = await loadP5();
         const sketch = (p5: P5Instance) => {
           const trails: { x: number; y: number; hue: number; size: number }[] = [];
@@ -28,6 +29,7 @@ export const auroraPulseArtwork = (): Artwork => {
           };
 
           p5.draw = () => {
+            // 背景を塗り直して、光の粒の軌跡が残らないようにする
             p5.background(palette.background);
             const time = p5.millis() * 0.0005;
 
@@ -42,6 +44,7 @@ export const auroraPulseArtwork = (): Artwork => {
             }
 
             if (p5.mouseIsPressed) {
+              // マウス押下中だけ軌跡を追加して、インタラクティブに反応させる
               trails.push({
                 x: p5.mouseX,
                 y: p5.mouseY,

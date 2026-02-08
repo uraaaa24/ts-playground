@@ -39,6 +39,7 @@ export const loadP5 = () =>
       resolve(window.p5);
       return;
     }
+    // 既に読み込み済みでない場合のみスクリプトを挿入し、グローバル p5 を待つ
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js";
     script.async = true;
