@@ -1,7 +1,3 @@
-import pg from "pg";
-
-const { Pool } = pg;
-
 type Star = {
   x: number;
   y: number;
@@ -51,48 +47,6 @@ const seedStars: Star[] = [
   { x: 22, y: 4, symbol: "✦" },
 ];
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const ensureSchema = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS stars (
-      id SERIAL PRIMARY KEY,
-      x INTEGER NOT NULL,
-      y INTEGER NOT NULL,
-      symbol TEXT NOT NULL
-    );
-  `);
-};
-
-const resetStars = async () => {
-  await pool.query("TRUNCATE TABLE stars;");
-};
-
-const seedIfEmpty = async () => {
-  const { rows } = await pool.query<{ count: string }>(
-    "SELECT COUNT(*) as count FROM stars;"
-  );
-  if (Number(rows[0]?.count ?? 0) > 0) {
-    return;
-  }
-
-  const insertValues = seedStars
-    .map((_, index) => `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`)
-    .join(", ");
-  const insertParams = seedStars.flatMap((star) => [star.x, star.y, star.symbol]);
-
-  await pool.query(`INSERT INTO stars (x, y, symbol) VALUES ${insertValues};`, insertParams);
-};
-
-const fetchStars = async (): Promise<Star[]> => {
-  const { rows } = await pool.query<Star>(
-    "SELECT x, y, symbol FROM stars ORDER BY y, x;"
-  );
-  return rows;
-};
-
 const render = (stars: Star[]) => {
   const canvas = Array.from({ length: CANVAS_HEIGHT }, () =>
     Array.from({ length: CANVAS_WIDTH }, () => DEFAULT_SYMBOL)
@@ -108,21 +62,8 @@ const render = (stars: Star[]) => {
   console.log(lines.join("\n"));
 };
 
-const run = async () => {
-  const shouldReset = process.argv.includes("--reset");
-
-  await ensureSchema();
-  if (shouldReset) {
-    await resetStars();
-  }
-  await seedIfEmpty();
-  const stars = await fetchStars();
-  render(stars);
-
-  await pool.end();
+const run = () => {
+  render(seedStars);
 };
 
-run().catch((error) => {
-  console.error("Failed to paint the pg.js constellations:", error);
-  process.exitCode = 1;
-});
+run();
