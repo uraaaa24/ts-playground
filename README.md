@@ -2,7 +2,7 @@
 
 作品選択用のホーム画面と、各作品を全画面で鑑賞できるページを持つギャラリーです。
 - ホーム: `/`
-- 作品ページ: `/<title>`（例: `/particle`, `/quad-fill`）
+- 作品ページ: `/<title>`（例: `/particle`, `/aurora-pulse`）
 
 ## Setup
 

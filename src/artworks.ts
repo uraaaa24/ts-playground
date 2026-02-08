@@ -1,3 +1,5 @@
+import p5 from "p5";
+
 type Palette = {
   background: string;
   primary: string;
@@ -24,6 +26,12 @@ const palettes: Palette[] = [
     primary: "#34d399",
     secondary: "#60a5fa",
     accent: "#f59e0b",
+  },
+  {
+    background: "#0b1120",
+    primary: "#f43f5e",
+    secondary: "#22d3ee",
+    accent: "#a3e635",
   },
 ];
 
@@ -116,125 +124,70 @@ const particleArtwork = (): Artwork => {
   };
 };
 
-type Point = {
-  x: number;
-  y: number;
-};
-
-type Circle = {
-  x: number;
-  y: number;
-  radius: number;
-};
-
-const isInsideQuad = (point: Point, quad: Point[]) => {
-  let sign = 0;
-  for (let i = 0; i < quad.length; i += 1) {
-    const current = quad[i];
-    const next = quad[(i + 1) % quad.length];
-    const cross = (next.x - current.x) * (point.y - current.y) -
-      (next.y - current.y) * (point.x - current.x);
-    if (cross !== 0) {
-      const currentSign = Math.sign(cross);
-      if (sign === 0) {
-        sign = currentSign;
-      } else if (sign !== currentSign) {
-        return false;
-      }
-    }
-  }
-  return true;
-};
-
-const quadFillArtwork = (): Artwork => {
-  const palette = pickPalette(1);
+const p5AuroraArtwork = (): Artwork => {
+  const palette = pickPalette(2);
 
   return {
-    title: "Quad Fill",
-    slug: "quad-fill",
-    description: "ランダムな四角形を円で充填する作品。",
+    title: "Aurora Pulse",
+    slug: "aurora-pulse",
+    description: "p5.jsで描くマルチカラーのインタラクティブ作品。",
     mount: (container) => {
-      const canvas = createCanvas(container);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Failed to get canvas context.");
-      }
+      const sketch = (instance: p5) => {
+        const trails: { x: number; y: number; hue: number; size: number }[] = [];
 
-      const draw = () => {
-        ctx.fillStyle = palette.background;
-        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        instance.setup = () => {
+          instance.createCanvas(instance.windowWidth, instance.windowHeight);
+          instance.colorMode(instance.HSB, 360, 100, 100, 100);
+          instance.noStroke();
+        };
 
-        const quads = Array.from({ length: 5 }, () => {
-          const centerX = Math.random() * window.innerWidth;
-          const centerY = Math.random() * window.innerHeight;
-          const width = 120 + Math.random() * 220;
-          const height = 100 + Math.random() * 180;
-          return [
-            { x: centerX - width * 0.5, y: centerY - height * 0.5 },
-            { x: centerX + width * 0.5, y: centerY - height * 0.4 },
-            { x: centerX + width * 0.4, y: centerY + height * 0.5 },
-            { x: centerX - width * 0.6, y: centerY + height * 0.4 },
-          ];
-        });
+        instance.windowResized = () => {
+          instance.resizeCanvas(instance.windowWidth, instance.windowHeight);
+        };
 
-        quads.forEach((quad) => {
-          const circles: Circle[] = [];
-          const paletteOrder = [palette.primary, palette.secondary, palette.accent];
-          let attempts = 0;
+        instance.draw = () => {
+          instance.background(palette.background);
+          const time = instance.millis() * 0.0005;
 
-          while (circles.length < 120 && attempts < 2000) {
-            attempts += 1;
-            const minX = Math.min(...quad.map((point) => point.x));
-            const maxX = Math.max(...quad.map((point) => point.x));
-            const minY = Math.min(...quad.map((point) => point.y));
-            const maxY = Math.max(...quad.map((point) => point.y));
-            const candidate: Circle = {
-              x: minX + Math.random() * (maxX - minX),
-              y: minY + Math.random() * (maxY - minY),
-              radius: 6 + Math.random() * 18,
-            };
-
-            if (!isInsideQuad(candidate, quad)) {
-              continue;
-            }
-
-            const overlaps = circles.some((circle) => {
-              const distance = Math.hypot(circle.x - candidate.x, circle.y - candidate.y);
-              return distance < circle.radius + candidate.radius * 0.9;
-            });
-
-            if (!overlaps) {
-              circles.push(candidate);
-            }
+          for (let i = 0; i < 140; i += 1) {
+            const angle = time + i * 0.12;
+            const radius = 120 + 80 * instance.sin(time + i * 0.3);
+            const x = instance.width / 2 + instance.cos(angle) * radius;
+            const y = instance.height / 2 + instance.sin(angle * 1.3) * radius;
+            const hue = (i * 4 + time * 120) % 360;
+            instance.fill(hue, 80, 100, 65);
+            instance.ellipse(x, y, 24 + instance.sin(time + i) * 10);
           }
 
-          circles.forEach((circle, index) => {
-            ctx.beginPath();
-            ctx.fillStyle = paletteOrder[index % paletteOrder.length];
-            ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-            ctx.fill();
+          if (instance.mouseIsPressed) {
+            trails.push({
+              x: instance.mouseX,
+              y: instance.mouseY,
+              hue: (instance.frameCount * 6) % 360,
+              size: 28 + instance.random(8),
+            });
+          }
+
+          while (trails.length > 120) {
+            trails.shift();
+          }
+
+          trails.forEach((trail, index) => {
+            instance.fill(trail.hue, 70, 100, 80 - index * 0.4);
+            instance.ellipse(trail.x, trail.y, trail.size * 0.8);
           });
-        });
+        };
       };
 
-      const handleResize = () => {
-        resizeCanvas(canvas);
-        draw();
-      };
-
-      resizeCanvas(canvas);
-      draw();
-      window.addEventListener("resize", handleResize);
-
+      const instance = new p5(sketch, container);
       return () => {
-        window.removeEventListener("resize", handleResize);
-        canvas.remove();
+        instance.remove();
       };
     },
   };
 };
 
-export const artworks: Artwork[] = [particleArtwork(), quadFillArtwork()];
+export const artworks: Artwork[] = [particleArtwork(), p5AuroraArtwork()];
 
 export const getArtworkBySlug = (slug: string) =>
   artworks.find((artwork) => artwork.slug === slug);
