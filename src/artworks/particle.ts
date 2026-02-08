@@ -1,5 +1,5 @@
-import type { Artwork } from "./types";
-import { pickPalette } from "./palettes";
+import type { Artwork } from "../core/types";
+import { pickPalette } from "../core/palettes";
 
 const createCanvas = (container: HTMLElement) => {
   const canvas = document.createElement("canvas");

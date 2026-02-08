@@ -1,6 +1,6 @@
-import type { Artwork } from "./types";
-import { pickPalette } from "./palettes";
-import { loadP5, type P5Instance } from "./p5-loader";
+import type { Artwork } from "../core/types";
+import { pickPalette } from "../core/palettes";
+import { loadP5, type P5Instance } from "../core/p5-loader";
 
 export const auroraPulseArtwork = (): Artwork => {
   const palette = pickPalette(2);

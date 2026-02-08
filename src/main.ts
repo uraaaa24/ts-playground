@@ -1,5 +1,5 @@
 import "./style.css";
-import { artworks, getArtworkBySlug } from "./artworks";
+import { artworks, getArtworkBySlug } from "./registry";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
