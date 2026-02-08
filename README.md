@@ -5,7 +5,7 @@ A tiny TypeScript "artwork" that uses **pg.js** (node-postgres) to store stars i
 ## Setup
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Environment
@@ -19,11 +19,11 @@ export DATABASE_URL="postgres://user:password@localhost:5432/yourdb"
 ## Run
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Use `--reset` if you want to clear and reseed the stars:
 
 ```bash
-npm run dev -- --reset
+pnpm dev -- --reset
 ```
