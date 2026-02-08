@@ -13,6 +13,10 @@ body {
   margin: 0;
 }
 
+body.artwork-active {
+  overflow: hidden;
+}
+
 #app {
   min-height: 100vh;
 }
@@ -63,4 +67,9 @@ body {
   width: 100vw;
   height: 100vh;
   display: block;
+}
+
+.artwork-container {
+  width: 100vw;
+  height: 100vh;
 }

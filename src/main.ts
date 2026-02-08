@@ -17,6 +17,7 @@ const clearCleanup = () => {
 };
 
 const renderHome = () => {
+  document.body.classList.remove("artwork-active");
   app.className = "home";
   app.innerHTML = `
     <h1>PG.js Gallery</h1>
@@ -33,7 +34,8 @@ const renderHome = () => {
 };
 
 const renderArtwork = (slug: string) => {
-  app.className = "";
+  document.body.classList.add("artwork-active");
+  app.className = "artwork-container";
   app.innerHTML = "";
   const artwork = getArtworkBySlug(slug);
   if (!artwork) {

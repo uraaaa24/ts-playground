@@ -5,10 +5,6 @@ type Palette = {
   accent: string;
 };
 
-type P5Module = {
-  default: new (sketch: (instance: P5Instance) => void, node?: HTMLElement) => P5Instance;
-};
-
 type P5Instance = {
   createCanvas: (width: number, height: number) => void;
   resizeCanvas: (width: number, height: number) => void;
@@ -30,9 +26,19 @@ type P5Instance = {
   ellipse: (x: number, y: number, width: number, height?: number) => void;
   fill: (h: number, s: number, b: number, a?: number) => void;
   windowResized?: () => void;
+  setup?: () => void;
+  draw?: () => void;
   remove: () => void;
   HSB: number;
 };
+
+type P5Constructor = new (sketch: (instance: P5Instance) => void, node?: HTMLElement) => P5Instance;
+
+declare global {
+  interface Window {
+    p5?: P5Constructor;
+  }
+}
 
 export type Artwork = {
   title: string;
@@ -162,7 +168,27 @@ const p5AuroraArtwork = (): Artwork => {
       let instance: P5Instance | null = null;
 
       const start = async () => {
-        const module = (await import("https://cdn.skypack.dev/p5")) as P5Module;
+        const loadP5 = () =>
+          new Promise<P5Constructor>((resolve, reject) => {
+            if (window.p5) {
+              resolve(window.p5);
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js";
+            script.async = true;
+            script.onload = () => {
+              if (window.p5) {
+                resolve(window.p5);
+              } else {
+                reject(new Error("p5 failed to load."));
+              }
+            };
+            script.onerror = () => reject(new Error("Failed to load p5 script."));
+            document.body.appendChild(script);
+          });
+
+        const P5 = await loadP5();
         const sketch = (p5: P5Instance) => {
           const trails: { x: number; y: number; hue: number; size: number }[] = [];
 
@@ -210,7 +236,7 @@ const p5AuroraArtwork = (): Artwork => {
           };
         };
 
-        instance = new module.default(sketch, container);
+        instance = new P5(sketch, container);
       };
 
       void start();
