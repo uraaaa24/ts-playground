@@ -1,10 +1,37 @@
-import p5 from "p5";
-
 type Palette = {
   background: string;
   primary: string;
   secondary: string;
   accent: string;
+};
+
+type P5Module = {
+  default: new (sketch: (instance: P5Instance) => void, node?: HTMLElement) => P5Instance;
+};
+
+type P5Instance = {
+  createCanvas: (width: number, height: number) => void;
+  resizeCanvas: (width: number, height: number) => void;
+  colorMode: (mode: number, max1?: number, max2?: number, max3?: number, maxA?: number) => void;
+  noStroke: () => void;
+  background: (color: string) => void;
+  millis: () => number;
+  windowWidth: number;
+  windowHeight: number;
+  width: number;
+  height: number;
+  mouseIsPressed: boolean;
+  mouseX: number;
+  mouseY: number;
+  frameCount: number;
+  sin: (value: number) => number;
+  cos: (value: number) => number;
+  random: (value: number) => number;
+  ellipse: (x: number, y: number, width: number, height?: number) => void;
+  fill: (h: number, s: number, b: number, a?: number) => void;
+  windowResized?: () => void;
+  remove: () => void;
+  HSB: number;
 };
 
 export type Artwork = {
@@ -132,56 +159,66 @@ const p5AuroraArtwork = (): Artwork => {
     slug: "aurora-pulse",
     description: "p5.jsで描くマルチカラーのインタラクティブ作品。",
     mount: (container) => {
-      const sketch = (instance: p5) => {
-        const trails: { x: number; y: number; hue: number; size: number }[] = [];
+      let instance: P5Instance | null = null;
 
-        instance.setup = () => {
-          instance.createCanvas(instance.windowWidth, instance.windowHeight);
-          instance.colorMode(instance.HSB, 360, 100, 100, 100);
-          instance.noStroke();
-        };
+      const start = async () => {
+        const module = (await import("https://cdn.skypack.dev/p5")) as P5Module;
+        const sketch = (p5: P5Instance) => {
+          const trails: { x: number; y: number; hue: number; size: number }[] = [];
 
-        instance.windowResized = () => {
-          instance.resizeCanvas(instance.windowWidth, instance.windowHeight);
-        };
+          p5.setup = () => {
+            p5.createCanvas(p5.windowWidth, p5.windowHeight);
+            p5.colorMode(p5.HSB, 360, 100, 100, 100);
+            p5.noStroke();
+          };
 
-        instance.draw = () => {
-          instance.background(palette.background);
-          const time = instance.millis() * 0.0005;
+          p5.windowResized = () => {
+            p5.resizeCanvas(p5.windowWidth, p5.windowHeight);
+          };
 
-          for (let i = 0; i < 140; i += 1) {
-            const angle = time + i * 0.12;
-            const radius = 120 + 80 * instance.sin(time + i * 0.3);
-            const x = instance.width / 2 + instance.cos(angle) * radius;
-            const y = instance.height / 2 + instance.sin(angle * 1.3) * radius;
-            const hue = (i * 4 + time * 120) % 360;
-            instance.fill(hue, 80, 100, 65);
-            instance.ellipse(x, y, 24 + instance.sin(time + i) * 10);
-          }
+          p5.draw = () => {
+            p5.background(palette.background);
+            const time = p5.millis() * 0.0005;
 
-          if (instance.mouseIsPressed) {
-            trails.push({
-              x: instance.mouseX,
-              y: instance.mouseY,
-              hue: (instance.frameCount * 6) % 360,
-              size: 28 + instance.random(8),
+            for (let i = 0; i < 140; i += 1) {
+              const angle = time + i * 0.12;
+              const radius = 120 + 80 * p5.sin(time + i * 0.3);
+              const x = p5.width / 2 + p5.cos(angle) * radius;
+              const y = p5.height / 2 + p5.sin(angle * 1.3) * radius;
+              const hue = (i * 4 + time * 120) % 360;
+              p5.fill(hue, 80, 100, 65);
+              p5.ellipse(x, y, 24 + p5.sin(time + i) * 10);
+            }
+
+            if (p5.mouseIsPressed) {
+              trails.push({
+                x: p5.mouseX,
+                y: p5.mouseY,
+                hue: (p5.frameCount * 6) % 360,
+                size: 28 + p5.random(8),
+              });
+            }
+
+            while (trails.length > 120) {
+              trails.shift();
+            }
+
+            trails.forEach((trail, index) => {
+              p5.fill(trail.hue, 70, 100, 80 - index * 0.4);
+              p5.ellipse(trail.x, trail.y, trail.size * 0.8);
             });
-          }
-
-          while (trails.length > 120) {
-            trails.shift();
-          }
-
-          trails.forEach((trail, index) => {
-            instance.fill(trail.hue, 70, 100, 80 - index * 0.4);
-            instance.ellipse(trail.x, trail.y, trail.size * 0.8);
-          });
+          };
         };
+
+        instance = new module.default(sketch, container);
       };
 
-      const instance = new p5(sketch, container);
+      void start();
+
       return () => {
-        instance.remove();
+        if (instance) {
+          instance.remove();
+        }
       };
     },
   };
