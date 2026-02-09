@@ -38,6 +38,49 @@ type Planet = {
   hasRing?: boolean;
 };
 
+type Vec2 = {
+  x: number;
+  y: number;
+};
+
+type PlanetPose = Vec2 & {
+  size: number;
+  orbitAngle: number;
+  rotationAngle: number;
+};
+
+const TWO_PI = Math.PI * 2;
+
+const daysSinceEpoch = (epoch: number) =>
+  (Date.now() - epoch) / (1000 * 60 * 60 * 24);
+
+const toOrbitAngle = (planet: Planet, days: number) =>
+  planet.baseAngle + (days / planet.orbitPeriodDays) * TWO_PI;
+
+const toRotationAngle = (planet: Planet, days: number) =>
+  (days / planet.rotationPeriodDays) * TWO_PI;
+
+const orbitScaleFor = (width: number, height: number, maxOrbit: number) =>
+  (Math.min(width, height) * 0.38) / maxOrbit;
+
+const withOrbitPosition = (
+  planet: Planet,
+  center: Vec2,
+  orbitScale: number,
+  days: number
+): PlanetPose => {
+  const orbitAngle = toOrbitAngle(planet, days);
+  const rotationAngle = toRotationAngle(planet, days);
+  const orbitRadius = planet.orbitRadius * orbitScale;
+  return {
+    orbitAngle,
+    rotationAngle,
+    size: planet.radius * orbitScale * 0.9,
+    x: center.x + Math.cos(orbitAngle) * orbitRadius,
+    y: center.y + Math.sin(orbitAngle) * orbitRadius * 0.85,
+  };
+};
+
 const buildStars = (count: number, width: number, height: number): Star[] =>
   Array.from({ length: count }, () => ({
     x: Math.random() * width,
@@ -61,7 +104,6 @@ export const solarSystemArtwork = (): Artwork => {
       let animationId = 0;
       let stars: Star[] = [];
       const epoch = Date.UTC(2000, 0, 1, 12, 0, 0);
-      const dayMs = 1000 * 60 * 60 * 24;
 
       const planets: Planet[] = [
         {
@@ -155,49 +197,45 @@ export const solarSystemArtwork = (): Artwork => {
         });
       };
 
-      const drawPlanet = (
-        planet: Planet,
-        centerX: number,
-        centerY: number,
-        orbitScale: number,
-        orbitAngle: number,
-        rotationAngle: number
-      ) => {
-        const orbitRadius = planet.orbitRadius * orbitScale;
-        const x = centerX + Math.cos(orbitAngle) * orbitRadius;
-        const y = centerY + Math.sin(orbitAngle) * orbitRadius * 0.85;
-        const size = planet.radius * orbitScale * 0.9;
-
+      const drawPlanet = (planet: Planet, pose: PlanetPose) => {
         ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(rotationAngle);
+        ctx.translate(pose.x, pose.y);
+        ctx.rotate(pose.rotationAngle);
 
         ctx.beginPath();
         ctx.fillStyle = planet.glow;
-        ctx.arc(0, 0, size * 1.6, 0, Math.PI * 2);
+        ctx.arc(0, 0, pose.size * 1.6, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
         ctx.fillStyle = planet.color;
-        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.arc(0, 0, pose.size, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.beginPath();
         ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-        ctx.lineWidth = Math.max(1, size * 0.18);
-        ctx.arc(0, 0, size * 0.5, -0.6, 0.6);
+        ctx.lineWidth = Math.max(1, pose.size * 0.18);
+        ctx.arc(0, 0, pose.size * 0.5, -0.6, 0.6);
         ctx.stroke();
 
         if (planet.hasRing) {
           ctx.beginPath();
           ctx.strokeStyle = "rgba(234, 216, 170, 0.75)";
-          ctx.lineWidth = Math.max(1, size * 0.25);
-          ctx.ellipse(0, 0, size * 1.6, size * 0.55, 0.3, 0, Math.PI * 2);
+          ctx.lineWidth = Math.max(1, pose.size * 0.25);
+          ctx.ellipse(
+            0,
+            0,
+            pose.size * 1.6,
+            pose.size * 0.55,
+            0.3,
+            0,
+            Math.PI * 2
+          );
           ctx.stroke();
         }
         ctx.restore();
 
-        return { x, y, size };
+        return pose;
       };
 
       const drawMoon = (
@@ -216,14 +254,19 @@ export const solarSystemArtwork = (): Artwork => {
       };
 
       const render = () => {
-        const daysSinceEpoch = (Date.now() - epoch) / dayMs;
+        const days = daysSinceEpoch(epoch);
         drawBackground();
 
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
+        const center = {
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+        };
         const maxOrbit = Math.max(...planets.map((planet) => planet.orbitRadius));
-        const orbitScale =
-          (Math.min(window.innerWidth, window.innerHeight) * 0.38) / maxOrbit;
+        const orbitScale = orbitScaleFor(
+          window.innerWidth,
+          window.innerHeight,
+          maxOrbit
+        );
 
         ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
         ctx.lineWidth = 1;
@@ -231,24 +274,24 @@ export const solarSystemArtwork = (): Artwork => {
           const orbitRadius = planet.orbitRadius * orbitScale;
           ctx.beginPath();
           ctx.ellipse(
-            centerX,
-            centerY,
+            center.x,
+            center.y,
             orbitRadius,
             orbitRadius * 0.85,
             0,
             0,
-            Math.PI * 2
+            TWO_PI
           );
           ctx.stroke();
         });
 
         const sunRadius = 22 * orbitScale * 1.6;
         const sunGlow = ctx.createRadialGradient(
-          centerX,
-          centerY,
+          center.x,
+          center.y,
           sunRadius * 0.2,
-          centerX,
-          centerY,
+          center.x,
+          center.y,
           sunRadius * 2.6
         );
         sunGlow.addColorStop(0, "rgba(255, 231, 169, 0.9)");
@@ -256,45 +299,27 @@ export const solarSystemArtwork = (): Artwork => {
         sunGlow.addColorStop(1, "rgba(255, 159, 64, 0)");
         ctx.fillStyle = sunGlow;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, sunRadius * 2.2, 0, Math.PI * 2);
+        ctx.arc(center.x, center.y, sunRadius * 2.2, 0, TWO_PI);
         ctx.fill();
 
         ctx.beginPath();
         ctx.fillStyle = "#f6c760";
-        ctx.arc(centerX, centerY, sunRadius, 0, Math.PI * 2);
+        ctx.arc(center.x, center.y, sunRadius, 0, TWO_PI);
         ctx.fill();
 
-        const earthOrbitAngle =
-          planets[2].baseAngle +
-          (daysSinceEpoch / planets[2].orbitPeriodDays) * Math.PI * 2;
-        const earthRotationAngle =
-          (daysSinceEpoch / planets[2].rotationPeriodDays) * Math.PI * 2;
         const earth = drawPlanet(
           planets[2],
-          centerX,
-          centerY,
-          orbitScale,
-          earthOrbitAngle,
-          earthRotationAngle
+          withOrbitPosition(planets[2], center, orbitScale, days)
         );
         planets
           .filter((planet) => planet.name !== "Earth")
           .forEach((planet) => {
-            const orbitAngle =
-              planet.baseAngle +
-              (daysSinceEpoch / planet.orbitPeriodDays) * Math.PI * 2;
-            const rotationAngle =
-              (daysSinceEpoch / planet.rotationPeriodDays) * Math.PI * 2;
             drawPlanet(
               planet,
-              centerX,
-              centerY,
-              orbitScale,
-              orbitAngle,
-              rotationAngle
+              withOrbitPosition(planet, center, orbitScale, days)
             );
           });
-        drawMoon(earth, daysSinceEpoch, orbitScale);
+        drawMoon(earth, days, orbitScale);
 
         animationId = window.requestAnimationFrame(render);
       };
