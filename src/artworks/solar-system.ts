@@ -31,7 +31,7 @@ type Planet = {
   radius: number;
   orbitRadius: number;
   orbitPeriodDays: number;
-  rotationSpeed: number;
+  rotationPeriodDays: number;
   baseAngle: number;
   color: string;
   glow: string;
@@ -69,7 +69,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 4,
           orbitRadius: 45,
           orbitPeriodDays: 87.969,
-          rotationSpeed: 2.4,
+          rotationPeriodDays: 58.646,
           baseAngle: 4.4,
           color: "#c0b5a9",
           glow: "rgba(255, 236, 214, 0.25)",
@@ -79,7 +79,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 7,
           orbitRadius: 70,
           orbitPeriodDays: 224.701,
-          rotationSpeed: 1.6,
+          rotationPeriodDays: 243.025,
           baseAngle: 1.8,
           color: "#d9b47a",
           glow: "rgba(255, 214, 160, 0.25)",
@@ -89,7 +89,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 8,
           orbitRadius: 95,
           orbitPeriodDays: 365.256,
-          rotationSpeed: 2.2,
+          rotationPeriodDays: 0.99726968,
           baseAngle: 1.2,
           color: "#4c8bd7",
           glow: "rgba(144, 196, 255, 0.28)",
@@ -99,7 +99,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 6,
           orbitRadius: 125,
           orbitPeriodDays: 686.98,
-          rotationSpeed: 2.4,
+          rotationPeriodDays: 1.02595675,
           baseAngle: 0.6,
           color: "#c8704a",
           glow: "rgba(255, 172, 140, 0.26)",
@@ -109,7 +109,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 14,
           orbitRadius: 160,
           orbitPeriodDays: 4332.589,
-          rotationSpeed: 3.2,
+          rotationPeriodDays: 0.41354,
           baseAngle: 1.9,
           color: "#d1a67f",
           glow: "rgba(255, 214, 170, 0.24)",
@@ -119,7 +119,7 @@ export const solarSystemArtwork = (): Artwork => {
           radius: 12,
           orbitRadius: 200,
           orbitPeriodDays: 10759.22,
-          rotationSpeed: 3,
+          rotationPeriodDays: 0.44401,
           baseAngle: 2.5,
           color: "#d9c28f",
           glow: "rgba(255, 230, 190, 0.24)",
@@ -216,7 +216,6 @@ export const solarSystemArtwork = (): Artwork => {
       };
 
       const render = () => {
-        const rotationTime = performance.now() * 0.0004;
         const daysSinceEpoch = (Date.now() - epoch) / dayMs;
         drawBackground();
 
@@ -268,13 +267,15 @@ export const solarSystemArtwork = (): Artwork => {
         const earthOrbitAngle =
           planets[2].baseAngle +
           (daysSinceEpoch / planets[2].orbitPeriodDays) * Math.PI * 2;
+        const earthRotationAngle =
+          (daysSinceEpoch / planets[2].rotationPeriodDays) * Math.PI * 2;
         const earth = drawPlanet(
           planets[2],
           centerX,
           centerY,
           orbitScale,
           earthOrbitAngle,
-          rotationTime * planets[2].rotationSpeed
+          earthRotationAngle
         );
         planets
           .filter((planet) => planet.name !== "Earth")
@@ -282,16 +283,18 @@ export const solarSystemArtwork = (): Artwork => {
             const orbitAngle =
               planet.baseAngle +
               (daysSinceEpoch / planet.orbitPeriodDays) * Math.PI * 2;
+            const rotationAngle =
+              (daysSinceEpoch / planet.rotationPeriodDays) * Math.PI * 2;
             drawPlanet(
               planet,
               centerX,
               centerY,
               orbitScale,
               orbitAngle,
-              rotationTime * planet.rotationSpeed
+              rotationAngle
             );
           });
-        drawMoon(earth, rotationTime, orbitScale);
+        drawMoon(earth, daysSinceEpoch, orbitScale);
 
         animationId = window.requestAnimationFrame(render);
       };
