@@ -47,20 +47,31 @@ body.artwork-active {
   gap: 14px;
 }
 
-.home a {
-  display: block;
+.home li {
+  display: grid;
+  gap: 6px;
   padding: 14px 16px;
   border-radius: 10px;
   background: #ffffff;
-  color: inherit;
-  text-decoration: none;
   border: 1px solid #e2ddd4;
   transition: background 0.2s ease, border 0.2s ease;
 }
 
-.home a:hover {
+.home li:hover {
   background: #f0ebe2;
   border-color: #d6cfbf;
+}
+
+.home a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.home span {
+  color: #6a6156;
+  font-size: 0.9rem;
 }
 
 .artwork {
