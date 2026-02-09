@@ -26,7 +26,7 @@ const renderHome = () => {
       ${artworks
         .map(
           (artwork) =>
-            `<li><a href="/${artwork.slug}">${artwork.title}</a></li>`
+            `<li><a href="/${artwork.slug}">${artwork.title}</a><span>${artwork.description}</span></li>`
         )
         .join("")}
     </ul>

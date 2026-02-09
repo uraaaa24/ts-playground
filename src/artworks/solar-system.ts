@@ -1,0 +1,338 @@
+import type { Artwork } from "../core/types";
+
+const createCanvas = (container: HTMLElement) => {
+  const canvas = document.createElement("canvas");
+  canvas.className = "artwork";
+  container.appendChild(canvas);
+  return canvas;
+};
+
+const resizeCanvas = (canvas: HTMLCanvasElement) => {
+  const { innerWidth, innerHeight, devicePixelRatio } = window;
+  canvas.width = innerWidth * devicePixelRatio;
+  canvas.height = innerHeight * devicePixelRatio;
+  canvas.style.width = `${innerWidth}px`;
+  canvas.style.height = `${innerHeight}px`;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  }
+};
+
+type Star = {
+  x: number;
+  y: number;
+  radius: number;
+  alpha: number;
+};
+
+type Planet = {
+  name: string;
+  radius: number;
+  orbitRadius: number;
+  orbitPeriodDays: number;
+  rotationPeriodDays: number;
+  baseAngle: number;
+  color: string;
+  glow: string;
+  hasRing?: boolean;
+};
+
+type Vec2 = {
+  x: number;
+  y: number;
+};
+
+type PlanetPose = Vec2 & {
+  size: number;
+  orbitAngle: number;
+  rotationAngle: number;
+};
+
+const TWO_PI = Math.PI * 2;
+
+const daysSinceEpoch = (epoch: number) =>
+  (Date.now() - epoch) / (1000 * 60 * 60 * 24);
+
+const toOrbitAngle = (planet: Planet, days: number) =>
+  planet.baseAngle + (days / planet.orbitPeriodDays) * TWO_PI;
+
+const toRotationAngle = (planet: Planet, days: number) =>
+  (days / planet.rotationPeriodDays) * TWO_PI;
+
+const orbitScaleFor = (width: number, height: number, maxOrbit: number) =>
+  (Math.min(width, height) * 0.38) / maxOrbit;
+
+const withOrbitPosition = (
+  planet: Planet,
+  center: Vec2,
+  orbitScale: number,
+  days: number
+): PlanetPose => {
+  const orbitAngle = toOrbitAngle(planet, days);
+  const rotationAngle = toRotationAngle(planet, days);
+  const orbitRadius = planet.orbitRadius * orbitScale;
+  return {
+    orbitAngle,
+    rotationAngle,
+    size: planet.radius * orbitScale * 0.9,
+    x: center.x + Math.cos(orbitAngle) * orbitRadius,
+    y: center.y + Math.sin(orbitAngle) * orbitRadius * 0.85,
+  };
+};
+
+const buildStars = (count: number, width: number, height: number): Star[] =>
+  Array.from({ length: count }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    radius: 0.6 + Math.random() * 1.6,
+    alpha: 0.4 + Math.random() * 0.6,
+  }));
+
+export const solarSystemArtwork = (): Artwork => {
+  return {
+    title: "Solar System",
+    slug: "solar-system",
+    description: "太陽系の自転と公転を描く作品。",
+    mount: (container) => {
+      const canvas = createCanvas(container);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Failed to get canvas context.");
+      }
+
+      let animationId = 0;
+      let stars: Star[] = [];
+      const epoch = Date.UTC(2000, 0, 1, 12, 0, 0);
+
+      const planets: Planet[] = [
+        {
+          name: "Mercury",
+          radius: 4,
+          orbitRadius: 45,
+          orbitPeriodDays: 87.969,
+          rotationPeriodDays: 58.646,
+          baseAngle: 4.4,
+          color: "#c0b5a9",
+          glow: "rgba(255, 236, 214, 0.25)",
+        },
+        {
+          name: "Venus",
+          radius: 7,
+          orbitRadius: 70,
+          orbitPeriodDays: 224.701,
+          rotationPeriodDays: 243.025,
+          baseAngle: 1.8,
+          color: "#d9b47a",
+          glow: "rgba(255, 214, 160, 0.25)",
+        },
+        {
+          name: "Earth",
+          radius: 8,
+          orbitRadius: 95,
+          orbitPeriodDays: 365.256,
+          rotationPeriodDays: 0.99726968,
+          baseAngle: 1.2,
+          color: "#4c8bd7",
+          glow: "rgba(144, 196, 255, 0.28)",
+        },
+        {
+          name: "Mars",
+          radius: 6,
+          orbitRadius: 125,
+          orbitPeriodDays: 686.98,
+          rotationPeriodDays: 1.02595675,
+          baseAngle: 0.6,
+          color: "#c8704a",
+          glow: "rgba(255, 172, 140, 0.26)",
+        },
+        {
+          name: "Jupiter",
+          radius: 14,
+          orbitRadius: 160,
+          orbitPeriodDays: 4332.589,
+          rotationPeriodDays: 0.41354,
+          baseAngle: 1.9,
+          color: "#d1a67f",
+          glow: "rgba(255, 214, 170, 0.24)",
+        },
+        {
+          name: "Saturn",
+          radius: 12,
+          orbitRadius: 200,
+          orbitPeriodDays: 10759.22,
+          rotationPeriodDays: 0.44401,
+          baseAngle: 2.5,
+          color: "#d9c28f",
+          glow: "rgba(255, 230, 190, 0.24)",
+          hasRing: true,
+        },
+      ];
+
+      const handleResize = () => {
+        resizeCanvas(canvas);
+        stars = buildStars(220, window.innerWidth, window.innerHeight);
+      };
+
+      const drawBackground = () => {
+        const gradient = ctx.createRadialGradient(
+          window.innerWidth * 0.4,
+          window.innerHeight * 0.3,
+          20,
+          window.innerWidth * 0.4,
+          window.innerHeight * 0.3,
+          Math.max(window.innerWidth, window.innerHeight)
+        );
+        gradient.addColorStop(0, "#0f1834");
+        gradient.addColorStop(0.5, "#070b1f");
+        gradient.addColorStop(1, "#04050f");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        stars.forEach((star) => {
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+          ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      };
+
+      const drawPlanet = (planet: Planet, pose: PlanetPose) => {
+        ctx.save();
+        ctx.translate(pose.x, pose.y);
+        ctx.rotate(pose.rotationAngle);
+
+        ctx.beginPath();
+        ctx.fillStyle = planet.glow;
+        ctx.arc(0, 0, pose.size * 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = planet.color;
+        ctx.arc(0, 0, pose.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = Math.max(1, pose.size * 0.18);
+        ctx.arc(0, 0, pose.size * 0.5, -0.6, 0.6);
+        ctx.stroke();
+
+        if (planet.hasRing) {
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(234, 216, 170, 0.75)";
+          ctx.lineWidth = Math.max(1, pose.size * 0.25);
+          ctx.ellipse(
+            0,
+            0,
+            pose.size * 1.6,
+            pose.size * 0.55,
+            0.3,
+            0,
+            Math.PI * 2
+          );
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        return pose;
+      };
+
+      const drawMoon = (
+        host: { x: number; y: number; size: number },
+        time: number,
+        orbitScale: number
+      ) => {
+        const moonOrbit = 18 * orbitScale;
+        const angle = time * 2.8;
+        const mx = host.x + Math.cos(angle) * moonOrbit;
+        const my = host.y + Math.sin(angle) * moonOrbit * 0.7;
+        ctx.beginPath();
+        ctx.fillStyle = "#d9dce6";
+        ctx.arc(mx, my, host.size * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      const render = () => {
+        const days = daysSinceEpoch(epoch);
+        drawBackground();
+
+        const center = {
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+        };
+        const maxOrbit = Math.max(...planets.map((planet) => planet.orbitRadius));
+        const orbitScale = orbitScaleFor(
+          window.innerWidth,
+          window.innerHeight,
+          maxOrbit
+        );
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+        ctx.lineWidth = 1;
+        planets.forEach((planet) => {
+          const orbitRadius = planet.orbitRadius * orbitScale;
+          ctx.beginPath();
+          ctx.ellipse(
+            center.x,
+            center.y,
+            orbitRadius,
+            orbitRadius * 0.85,
+            0,
+            0,
+            TWO_PI
+          );
+          ctx.stroke();
+        });
+
+        const sunRadius = 22 * orbitScale * 1.6;
+        const sunGlow = ctx.createRadialGradient(
+          center.x,
+          center.y,
+          sunRadius * 0.2,
+          center.x,
+          center.y,
+          sunRadius * 2.6
+        );
+        sunGlow.addColorStop(0, "rgba(255, 231, 169, 0.9)");
+        sunGlow.addColorStop(0.45, "rgba(255, 197, 104, 0.45)");
+        sunGlow.addColorStop(1, "rgba(255, 159, 64, 0)");
+        ctx.fillStyle = sunGlow;
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, sunRadius * 2.2, 0, TWO_PI);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = "#f6c760";
+        ctx.arc(center.x, center.y, sunRadius, 0, TWO_PI);
+        ctx.fill();
+
+        const earth = drawPlanet(
+          planets[2],
+          withOrbitPosition(planets[2], center, orbitScale, days)
+        );
+        planets
+          .filter((planet) => planet.name !== "Earth")
+          .forEach((planet) => {
+            drawPlanet(
+              planet,
+              withOrbitPosition(planet, center, orbitScale, days)
+            );
+          });
+        drawMoon(earth, days, orbitScale);
+
+        animationId = window.requestAnimationFrame(render);
+      };
+
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      render();
+
+      return () => {
+        window.cancelAnimationFrame(animationId);
+        window.removeEventListener("resize", handleResize);
+        canvas.remove();
+      };
+    },
+  };
+};
