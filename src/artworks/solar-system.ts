@@ -30,8 +30,9 @@ type Planet = {
   name: string;
   radius: number;
   orbitRadius: number;
-  orbitSpeed: number;
+  orbitPeriodDays: number;
   rotationSpeed: number;
+  baseAngle: number;
   color: string;
   glow: string;
   hasRing?: boolean;
@@ -59,14 +60,17 @@ export const solarSystemArtwork = (): Artwork => {
 
       let animationId = 0;
       let stars: Star[] = [];
+      const epoch = Date.UTC(2000, 0, 1, 12, 0, 0);
+      const dayMs = 1000 * 60 * 60 * 24;
 
       const planets: Planet[] = [
         {
           name: "Mercury",
           radius: 4,
           orbitRadius: 45,
-          orbitSpeed: 1.4,
+          orbitPeriodDays: 87.969,
           rotationSpeed: 2.4,
+          baseAngle: 4.4,
           color: "#c0b5a9",
           glow: "rgba(255, 236, 214, 0.25)",
         },
@@ -74,8 +78,9 @@ export const solarSystemArtwork = (): Artwork => {
           name: "Venus",
           radius: 7,
           orbitRadius: 70,
-          orbitSpeed: 1.1,
+          orbitPeriodDays: 224.701,
           rotationSpeed: 1.6,
+          baseAngle: 1.8,
           color: "#d9b47a",
           glow: "rgba(255, 214, 160, 0.25)",
         },
@@ -83,8 +88,9 @@ export const solarSystemArtwork = (): Artwork => {
           name: "Earth",
           radius: 8,
           orbitRadius: 95,
-          orbitSpeed: 0.9,
+          orbitPeriodDays: 365.256,
           rotationSpeed: 2.2,
+          baseAngle: 1.2,
           color: "#4c8bd7",
           glow: "rgba(144, 196, 255, 0.28)",
         },
@@ -92,8 +98,9 @@ export const solarSystemArtwork = (): Artwork => {
           name: "Mars",
           radius: 6,
           orbitRadius: 125,
-          orbitSpeed: 0.8,
+          orbitPeriodDays: 686.98,
           rotationSpeed: 2.4,
+          baseAngle: 0.6,
           color: "#c8704a",
           glow: "rgba(255, 172, 140, 0.26)",
         },
@@ -101,8 +108,9 @@ export const solarSystemArtwork = (): Artwork => {
           name: "Jupiter",
           radius: 14,
           orbitRadius: 160,
-          orbitSpeed: 0.55,
+          orbitPeriodDays: 4332.589,
           rotationSpeed: 3.2,
+          baseAngle: 1.9,
           color: "#d1a67f",
           glow: "rgba(255, 214, 170, 0.24)",
         },
@@ -110,8 +118,9 @@ export const solarSystemArtwork = (): Artwork => {
           name: "Saturn",
           radius: 12,
           orbitRadius: 200,
-          orbitSpeed: 0.45,
+          orbitPeriodDays: 10759.22,
           rotationSpeed: 3,
+          baseAngle: 2.5,
           color: "#d9c28f",
           glow: "rgba(255, 230, 190, 0.24)",
           hasRing: true,
@@ -151,11 +160,10 @@ export const solarSystemArtwork = (): Artwork => {
         centerX: number,
         centerY: number,
         orbitScale: number,
-        time: number
+        orbitAngle: number,
+        rotationAngle: number
       ) => {
         const orbitRadius = planet.orbitRadius * orbitScale;
-        const orbitAngle = time * planet.orbitSpeed;
-        const rotationAngle = time * planet.rotationSpeed;
         const x = centerX + Math.cos(orbitAngle) * orbitRadius;
         const y = centerY + Math.sin(orbitAngle) * orbitRadius * 0.85;
         const size = planet.radius * orbitScale * 0.9;
@@ -208,7 +216,8 @@ export const solarSystemArtwork = (): Artwork => {
       };
 
       const render = () => {
-        const time = performance.now() * 0.00025;
+        const rotationTime = performance.now() * 0.0004;
+        const daysSinceEpoch = (Date.now() - epoch) / dayMs;
         drawBackground();
 
         const centerX = window.innerWidth / 2;
@@ -256,13 +265,33 @@ export const solarSystemArtwork = (): Artwork => {
         ctx.arc(centerX, centerY, sunRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        const earth = drawPlanet(planets[2], centerX, centerY, orbitScale, time);
+        const earthOrbitAngle =
+          planets[2].baseAngle +
+          (daysSinceEpoch / planets[2].orbitPeriodDays) * Math.PI * 2;
+        const earth = drawPlanet(
+          planets[2],
+          centerX,
+          centerY,
+          orbitScale,
+          earthOrbitAngle,
+          rotationTime * planets[2].rotationSpeed
+        );
         planets
           .filter((planet) => planet.name !== "Earth")
           .forEach((planet) => {
-            drawPlanet(planet, centerX, centerY, orbitScale, time);
+            const orbitAngle =
+              planet.baseAngle +
+              (daysSinceEpoch / planet.orbitPeriodDays) * Math.PI * 2;
+            drawPlanet(
+              planet,
+              centerX,
+              centerY,
+              orbitScale,
+              orbitAngle,
+              rotationTime * planet.rotationSpeed
+            );
           });
-        drawMoon(earth, time, orbitScale);
+        drawMoon(earth, rotationTime, orbitScale);
 
         animationId = window.requestAnimationFrame(render);
       };
